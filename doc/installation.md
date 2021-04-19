@@ -15,18 +15,16 @@ apt-get update && apt-get --with-new-pkgs upgrade -y && apt-get install curl -y
 reboot
 ```
 
-After installation, to initialize the cluster you need 3 different steps:
-
-- master node initialization
-- join a worker to cluster
-- grant access to the worker
-
-To initialize the cluster, execute on the master node:
+To initialize the cluster, execute on the leader node:
 ```
-nethserver init
+create-cluster fc1.dp.nethserver.net:55820 10.5.4.0/24
 ```
 
-This command will initialize the master node as WireGuard VPN server with private IP `10.5.4.1`, listening on port `55820`.
+The command arguments represent
+
+1. the public VPN endpoint address is `fc1.dp.nethserver.net:55820`.
+2. the cluster VPN network. The first IP is allocated to the leader node.
+
 
 Then, move to the worker node and execute:
 ```

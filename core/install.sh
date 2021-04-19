@@ -32,8 +32,9 @@ if [[ ${distro} == "debian" ]]; then
 fi
 
 echo "Extracting core sources:"
+mkdir -pv /var/lib/nethserver/node/state
 cid=$(podman create ghcr.io/nethserver/core:${IMAGE_TAG:-latest})
-podman export ${cid} | tar -C / -x -v -f - >/var/lib/nethserver/node/state/image.lst
+podman export ${cid} | tar -C / -x -v -f - | tee /var/lib/nethserver/node/state/image.lst
 podman rm -f ${cid}
 
 if [[ ! -f ~/.ssh/id_rsa.pub ]] ; then
@@ -48,6 +49,7 @@ install -m 600 -T ~/.ssh/id_rsa.pub /etc/nethserver/skel/.ssh/authorized_keys
 echo "Setup agent:"
 agent_dir=/usr/local/nethserver/agent
 python3 -mvenv ${agent_dir}
+${agent_dir}/bin/pip3 install -U pip
 ${agent_dir}/bin/pip3 install redis ipcalc six
 
 echo "Setup registry:"
@@ -60,8 +62,9 @@ podman pull docker.io/redis:6-alpine
 systemctl enable --now redis.service
 
 echo "Generating WireGuard VPN key pair:"
-pubkey=$(umask 0077; wg genkey | tee /etc/nethserver/wg0.key | wg pubkey)
-echo "${pubkey}" > /etc/nethserver/wg0.pub
+(umask 0077; wg genkey | tee /etc/nethserver/wg0.key | wg pubkey) | tee /etc/nethserver/wg0.pub
 
 echo "Start API server and cluster agent:"
 systemctl enable --now api-server.service agent@cluster.service
+
+systemctl enable --now agent@traefik.service
